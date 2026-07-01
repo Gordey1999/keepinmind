@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>KeepInMind</title>
+
+	<link rel="icon" type="image/svg+xml" href="/keepinmind/assets/favicon-3XAxGppp.svg">
+
+  <script type="module" crossorigin src="/keepinmind/assets/index-DaavLXSF.js"></script>
+  <link rel="stylesheet" crossorigin href="/keepinmind/assets/index-DdetNp0J.css">
+</head>
+<body>
+
+<section id="auth-welcome-screen" class="auth-screen">
+	<div class="auth-card">
+		<h1>KeepInMind</h1>
+		<p>Приложение для интервального повторения слов и терминов.</p>
+		<button class="btn-primary btn-google-login" id="btn-global-login">
+			Войти через Google
+		</button>
+	</div>
+</section>
+
+<div id="app-wrapper" class="--hidden">
+
+	<!-- Шапка приложения -->
+	<header class="header">
+		<div class="header__logo"><i class="fa-solid fa-brain"></i> KeepInMind</div>
+		<nav class="header__nav">
+			<button class="btn-nav --active" data-screen="train">Учить</button>
+			<button class="btn-nav" data-screen="words">Слова</button>
+			<button class="btn-nav" data-screen="categories">Категории</button>
+		</nav>
+		<div class="header__auth">
+			<button class="btn-logout">Выйти</button>
+		</div>
+	</header>
+
+	<!-- Основной контейнер приложения -->
+	<main class="app-container">
+
+		<!-- 1. ЭКРАН ТРЕНИРОВКИ -->
+		<section id="screen-train" class="screen">
+			<!-- Счетчик оставшихся слов -->
+			<div class="train__progress">Осталось карточек: <span id="cards-left">5</span></div>
+
+			<!-- Карточка слова -->
+			<!-- Карточка слова -->
+			<div class="card">
+				<div class="card__front">
+					<div class="card__category">Категория: </div>
+					<h2 class="card__word"></h2>
+					<button class="btn-audio" title="Озвучить"><i class="fa-solid fa-volume-high"></i></button>
+				</div>
+
+				<!-- ЗОНА ВВОДА ДЛЯ САМОПРоОВЕРКИ -->
+				<div class="card__input-zone" id="card-check-zone">
+					<input type="text" id="train-answer-input" placeholder="Введите перевод для проверки..." autocomplete="off">
+					<button class="btn-primary" id="btn-check-answer">Проверить</button>
+				</div>
+
+				<!-- Подсказка / Перевод (скрыта по умолчанию) -->
+				<div class="card__back --hidden" id="card-translation">
+					<p class="card__hint"><strong id="correct-answer-text">Интервальные повторения</strong></p>
+					<span class="card__result-badge" id="check-result-badge">Верно!</span>
+				</div>
+
+				<button class="btn-show-hint" id="btn-show-hint">Показать перевод</button>
+			</div>
+
+			<!-- Кнопки управления -->
+			<div class="train__actions">
+				<button class="btn-action --dont-remember">Не помню</button>
+				<button class="btn-action --remember">Помню</button>
+			</div>
+
+			<!-- Сообщение об окончании (скрыто по умолчанию) -->
+			<div class="train__finished --hidden" id="train-finished-msg">
+				<div style="font-size: 3rem; margin-bottom: 1rem;"><i class="fa-solid fa-circle-check" style="color: #34c759;"></i></div>
+				<h3>На сегодня всё!</h3>
+				<p id="train-next-time-text">Загрузка времени следующего повторения...</p>
+			</div>
+		</section>
+
+		<!-- 2. ЭКРАН СПИСКА СЛОВ -->
+		<section id="screen-words" class="screen --hidden">
+			<div class="screen__header">
+				<h2>Мой словарь</h2>
+				<button class="btn-primary" id="btn-go-add-word">+ Добавить слово</button>
+			</div>
+
+			<div class="words-stats">
+				<div class="words-stats__item --total">
+					<span class="js-stats-total">0</span>
+					<p>Всего слов</p>
+				</div>
+				<div class="words-stats__item --level-0">
+					<span class="js-stats-lvl0">0</span>
+					<p>Новые</p>
+				</div>
+				<div class="words-stats__item --level-1">
+					<span class="js-stats-lvl1">0</span>
+					<p>Учатся</p>
+				</div>
+				<div class="words-stats__item --level-2">
+					<span class="js-stats-lvl2">0</span>
+					<p>Знаю</p>
+				</div>
+				<div class="words-stats__item --level-3">
+					<span class="js-stats-lvl3">0</span>
+					<p>Усвоены</p>
+				</div>
+			</div>
+
+			<!-- ПОЛЕ ПОИСКА С ИКОНКОЙ FA -->
+			<div class="search-wrapper">
+				<i class="fa-solid fa-magnifying-glass search-icon"></i>
+				<input type="text" id="words-search-input" placeholder="Поиск по слову, переводу или категории..." autocomplete="off">
+			</div>
+
+			<div class="words-list" id="words-list-container">
+
+			</div>
+		</section>
+
+		<!-- 3. ЭКРАН КАТЕГОРИЙ -->
+		<section id="screen-categories" class="screen --hidden">
+			<h2>Управление категориями</h2>
+			<div class="category-form">
+				<input type="text" placeholder="Новая категория (например, IT-термины)">
+				<button class="btn-primary">Добавить</button>
+			</div>
+			<ul class="categories-list">
+
+			</ul>
+		</section>
+
+		<section id="screen-word-form" class="screen --hidden">
+			<h2 id="form-title">Добавить новое слово</h2>
+			<form class="form" id="word-universal-form">
+				<!-- Скрытое поле для ID слова (пустое при добавлении, заполнено при редактировании) -->
+				<input type="hidden" id="form-word-id">
+
+				<label>Слово или фраза:
+					<input type="text" required class="js-form-term" placeholder="Например: Consistent">
+				</label>
+				<label>Перевод или подсказка:
+					<input type="text" required class="js-form-hint" placeholder="Например: Последовательный">
+				</label>
+				<label>Категория:
+					<div class="select-wrapper">
+						<select class="js-form-category">
+							<!-- Категории загружаются динамически -->
+						</select>
+						<!-- Поставили локальную иконку Font Awesome поверх -->
+						<i class="fa-solid fa-chevron-down select-icon"></i>
+					</div>
+				</label>
+				<div class="form__buttons">
+					<button type="submit" class="btn-primary" id="btn-form-submit">Сохранить</button>
+					<button type="button" class="btn-secondary" id="btn-cancel-word">Отмена</button>
+				</div>
+			</form>
+		</section>
+
+	</main>
+</div>
+
+<template id="category-item">
+	<li class="category-item">
+		<span class="category-item__name"></span>
+		<div>
+			<button class="btn-icon btn-delete" title="Удалить"><i class="fa-solid fa-trash"></i></button>
+		</div>
+	</li>
+</template>
+
+<template id="word-item">
+	<div class="word-row word-item">
+        <!-- Тонкий цветной маркер слева, показывающий уровень -->
+        <div class="word-item__level-marker"></div>
+
+        <div class="word-item__body">
+		<div>
+			<strong class="word-item__term"></strong>
+			<span class="word-item__sub"></span>
+		</div>
+            <!-- Индикатор прогресса в виде мини-шкалы загрузки -->
+            <div class="word-item__progress-track">
+                <div class="word-item__progress-bar"></div>
+            </div>
+        </div>
+
+		<div class="word-row__actions">
+			<button class="btn-icon btn-edit-word" title="Редактировать"><i class="fa-solid fa-pen"></i></button>
+			<button class="btn-icon btn-delete-word" title="Удалить"><i class="fa-solid fa-trash"></i></button>
+		</div>
+	</div>
+</template>
+
+
+</body>
+
+</html>
