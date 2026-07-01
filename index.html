@@ -7,8 +7,8 @@
 
 	<link rel="icon" type="image/svg+xml" href="/keepinmind/assets/favicon-3XAxGppp.svg">
 
-  <script type="module" crossorigin src="/keepinmind/assets/index-DaavLXSF.js"></script>
-  <link rel="stylesheet" crossorigin href="/keepinmind/assets/index-DdetNp0J.css">
+  <script type="module" crossorigin src="/keepinmind/assets/index-DT0LjrHs.js"></script>
+  <link rel="stylesheet" crossorigin href="/keepinmind/assets/index-Dr42Hv4b.css">
 </head>
 <body>
 
@@ -65,14 +65,31 @@
 					<p class="card__hint"><strong id="correct-answer-text">Интервальные повторения</strong></p>
 					<span class="card__result-badge" id="check-result-badge">Верно!</span>
 				</div>
-
-				<button class="btn-show-hint" id="btn-show-hint">Показать перевод</button>
 			</div>
 
-			<!-- Кнопки управления -->
 			<div class="train__actions">
-				<button class="btn-action --dont-remember">Не помню</button>
-				<button class="btn-action --remember">Помню</button>
+				<!-- Первоначальное состояние: кнопка "Не знаю / Показать ответ" -->
+				<!-- Если поле ввода скрыто (длинный текст), эта кнопка будет единственным способом увидеть ответ -->
+				<button class="btn-primary" id="btn-main-reveal" style="grid-column: span 2; padding: 1rem; font-size: 1.1rem;">
+					<i class="fa-solid fa-eye"></i> Показать ответ
+				</button>
+
+				<!-- Панель оценок алгоритма SM-2 (скрыта при старте карточки) -->
+				<!-- Панель оценок алгоритма SM-2 -->
+				<div class="train__score-panel --hidden" id="train-score-panel" style="grid-column: span 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%;">
+					<!-- Стандартные кнопки оценок (будут скрываться для забытых слов) -->
+					<button class="btn-score --score-0 js-score-standard" data-score="0">Забыл</button>
+					<button class="btn-score --score-3 js-score-standard" data-score="3">Трудно</button>
+					<button class="btn-score --score-4 js-score-standard" data-score="4">Помню</button>
+					<button class="btn-score --score-5 js-score-standard" data-score="5">Легко</button>
+
+					<button class="btn-score --score-0 js-btn-still-forget --hidden" data-score="still-forget" style="grid-column: span 2; padding: 1rem;">
+						<i class="fa-solid fa-rotate-right"></i> Все еще не помню
+					</button>
+					<button class="btn-score --score-5 js-btn-now-remember --hidden" data-score="now-remember" style="grid-column: span 2; padding: 1rem;">
+						<i class="fa-solid fa-graduation-cap"></i> Теперь помню
+					</button>
+				</div>
 			</div>
 
 			<!-- Сообщение об окончании (скрыто по умолчанию) -->
