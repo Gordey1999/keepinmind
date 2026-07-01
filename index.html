@@ -64,11 +64,8 @@
 					<p class="card__hint"><strong id="correct-answer-text">Интервальные повторения</strong></p>
 					<span class="card__result-badge" id="check-result-badge">Верно!</span>
 				</div>
-
-				<button class="btn-show-hint" id="btn-show-hint">Показать ответ</button>
 			</div>
 
-			<!-- Кнопки управления -->
 			<div class="train__actions">
 				<!-- Первоначальное состояние: кнопка "Не знаю / Показать ответ" -->
 				<!-- Если поле ввода скрыто (длинный текст), эта кнопка будет единственным способом увидеть ответ -->
@@ -77,11 +74,20 @@
 				</button>
 
 				<!-- Панель оценок алгоритма SM-2 (скрыта при старте карточки) -->
+				<!-- Панель оценок алгоритма SM-2 -->
 				<div class="train__score-panel --hidden" id="train-score-panel" style="grid-column: span 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%;">
-					<button class="btn-score --score-0" data-score="0">Забыл</button>
-					<button class="btn-score --score-3" data-score="3">Трудно</button>
-					<button class="btn-score --score-4" data-score="4">Помню</button>
-					<button class="btn-score --score-5" data-score="5">Легко</button>
+					<!-- Стандартные кнопки оценок (будут скрываться для забытых слов) -->
+					<button class="btn-score --score-0 js-score-standard" data-score="0">Забыл</button>
+					<button class="btn-score --score-3 js-score-standard" data-score="3">Трудно</button>
+					<button class="btn-score --score-4 js-score-standard" data-score="4">Помню</button>
+					<button class="btn-score --score-5 js-score-standard" data-score="5">Легко</button>
+
+					<button class="btn-score --score-0 js-btn-still-forget --hidden" data-score="still-forget" style="grid-column: span 2; padding: 1rem;">
+						<i class="fa-solid fa-rotate-right"></i> Все еще не помню
+					</button>
+					<button class="btn-score --score-5 js-btn-now-remember --hidden" data-score="now-remember" style="grid-column: span 2; padding: 1rem;">
+						<i class="fa-solid fa-graduation-cap"></i> Теперь помню
+					</button>
 				</div>
 			</div>
 

@@ -22,12 +22,16 @@ export class TrainPage {
 		this._cardTranslation = document.getElementById('card-translation');
 		this._correctAnswerText = document.getElementById('correct-answer-text');
 		this._resultBadge = document.getElementById('check-result-badge');
-		this._btnShowHint = document.getElementById('btn-show-hint');
 
 		// Кнопки результата
 		this._actionsZone = this._el.querySelector('.train__actions');
-		this._btnDontRemember = this._el.querySelector('.--dont-remember');
-		this._btnRemember = this._el.querySelector('.--remember');
+		this._btnMainReveal = document.getElementById('btn-main-reveal');
+		this._scorePanel = document.getElementById('train-score-panel');
+
+		this._btnStillForget = this._scorePanel.querySelector('.js-btn-still-forget');
+		this._standardScoreButtons = this._scorePanel.querySelectorAll('.js-score-standard');
+		this._btnNowRemember = this._scorePanel.querySelector('.js-btn-now-remember');
+
 
 		this._finishedMsg = document.getElementById('train-finished-msg');
 
@@ -43,14 +47,33 @@ export class TrainPage {
 			if (e.key === 'Enter') this._checkAnswer();
 		});
 
-		this._btnShowHint.addEventListener('click', this._showTranslation.bind(this));
+		this._btnMainReveal.addEventListener('click', this._revealCard.bind(this));
+
 		this._btnAudio.addEventListener('click', this._pronounceCurrent.bind(this));
 
-		this._btnRemember.addEventListener('click', () => this._handleRemember());
-		this._btnDontRemember.addEventListener('click', () => this._handleDontRemember());
+		this._scorePanel.addEventListener('click', (e) => {
+			const btn = e.target.closest('.btn-score');
+			if (!btn) return;
+
+			const scoreAttr = btn.getAttribute('data-score');
+
+			if (scoreAttr === 'still-forget') {
+				// Нажали "Все еще не помню" -> отправляем специальный сигнал
+				this._handleUserScore(0);
+			} else if (scoreAttr === 'now-remember') {
+				// Нажали "Теперь помню" -> отправляем сигнал на завершение
+				this._handleUserScore(1);
+			} else {
+				// Обычные кнопки (0, 3, 4, 5)
+				const score = parseInt(scoreAttr, 10);
+				this._handleUserScore(score);
+			}
+		});
 	}
 
 	async startTraining() {
+		if (this._timerId) clearInterval(this._timerId);
+
 		this._resetUI();
 		this._finishedMsg.classList.add('--hidden');
 		this._el.querySelector('.card').classList.remove('--hidden');
@@ -61,13 +84,27 @@ export class TrainPage {
 			const allWords = await this.fb.getWords();
 			const now = new Date();
 
-			this._queue = allWords.filter(word => {
-				return new Date(word.nextReviewDate) <= now;
-			}).slice(0, 15);
+	        // 1. Отбираем все слова, у которых дата повторения меньше или равна текущей
+	        const availableWords = allWords.filter(word => {
+					return new Date(word.nextReviewDate) <= now;
+				});
+
+	        // 2. Сортируем слова по приоритету, чтобы тренировка была эффективной:
+	        // - Сначала идут слова с меньшим количеством успешных повторений подряд (они самые шаткие)
+	        // - Затем более стабильные слова
+	        availableWords.sort((a, b) => {
+	            const repsA = a.repetitions || 0;
+	            const repsB = b.repetitions || 0;
+	            return repsA - repsB;
+	        });
+
+	        // 3. 🌟 ВНЕДРЯЕМ ЛИМИТ: берем ровно первые 20 слов из отсортированного списка
+	        this._queue = availableWords.slice(0, 20);
 
 			this._showCard();
 		} catch (err) {
 			console.error(err);
+			alert('Ошибка при загрузке пула тренировки');
 		}
 	}
 
@@ -98,6 +135,9 @@ export class TrainPage {
 			this._inputZone.classList.add('--hidden');
 		}
 
+		this._btnMainReveal.classList.remove('--hidden');
+		this._scorePanel.classList.add('--hidden');
+
 		// Сбрасываем состояние полей для нового слова
 		this._inputAnswer.value = '';
 		this._inputAnswer.className = '';
@@ -120,6 +160,33 @@ export class TrainPage {
 		}
 	}
 
+	_revealCard() {
+		this._cardTranslation.classList.remove('--hidden');
+
+		if (this._canPronounce(this._queue[0])) {
+			this._pronounceCurrent();
+		}
+
+		this._btnMainReveal.classList.add('--hidden');
+		this._scorePanel.classList.remove('--hidden');
+
+	    // ПРОВЕРКА: Проходила ли карточка через круг ошибок в этой сессии?
+	    const currentWord = this._queue[0];
+	    if (currentWord && currentWord.failed) {
+	        // Если слово уже забывали — прячем 4 кнопки и выводим одну большую
+	        this._standardScoreButtons.forEach(btn => btn.classList.add('--hidden'));
+
+		    this._btnStillForget.classList.remove('--hidden');
+		    this._btnNowRemember.classList.remove('--hidden');
+	    } else {
+	        // Если это первый показ слова — возвращаем стандартную панель оценок
+	        this._standardScoreButtons.forEach(btn => btn.classList.remove('--hidden'));
+
+		    this._btnStillForget.classList.add('--hidden');
+		    this._btnNowRemember.classList.add('--hidden');
+		}
+	}
+
 	// 🔄 НОВАЯ ЛОГИКА ПРОВЕРКИ: бесконечные попытки
 	_checkAnswer() {
 		const userAnswer = this._inputAnswer.value.trim().toLowerCase();
@@ -136,11 +203,7 @@ export class TrainPage {
 			this._resultBadge.className = 'card__result-badge --success';
 			this._inputAnswer.disabled = true;
 			this._btnCheck.disabled = true;
-			this._showTranslation();
-
-			if (this._canPronounce(currentWord)) {
-				setTimeout(() => this._pronounceCurrent(), 100);
-			}
+			this._revealCard();
 		} else {
 			// Если неверно — просто говорим об этом. Поле ОСТАЕТСЯ активным для новых попыток
 			this._inputAnswer.classList.add('--error');
@@ -153,30 +216,29 @@ export class TrainPage {
 		return !/[а-яА-ЯёЁ]/.test(word.term);
 	}
 
-	_showTranslation() {
-		this._cardTranslation.classList.remove('--hidden');
-	}
+	async _handleUserScore(score) {
+		const currentWord = this._queue.shift(); // Извлекаем текущее слово из начала очереди
+		if (!currentWord) return;
 
-	async _handleRemember() {
-		const currentWord = this._queue.shift();
-		if (!currentWord) { return; }
+		if (score === 0) {
+			currentWord.failed = true;
+			this._queue.push(currentWord); // Кидаем в конец очереди сессии
+		} else if (currentWord.failed) {
+			this._saveScore(currentWord, 0);
+		} else {
+			this._saveScore(currentWord, score);
 
-		this._saveScore(currentWord, currentWord.failed ? 0 : 5);
-		this._showCard();
-	}
+			// В конец очереди текущей сессии слово БОЛЬШЕ НЕ ПУШИТСЯ, тренировка по нему завершена
+		}
 
-	async _handleDontRemember() {
-		const currentWord = this._queue.shift();
-		if (!currentWord) { return; }
-
-		currentWord.failed = true;
-		this._queue.push(currentWord);
 		this._showCard();
 	}
 
 	async _saveScore(currentWord, score) {
 
 		let { repetitions, interval, easeFactor } = currentWord;
+
+		const nextDate = new Date(); // Текущий момент времени
 
 		if (score >= 3) {
 			if (repetitions === 0) {
@@ -187,17 +249,18 @@ export class TrainPage {
 				interval = Math.round(interval * easeFactor);
 			}
 			repetitions++;
+
+			nextDate.setDate(nextDate.getDate() + interval);
+			nextDate.setHours(4, 0, 0, 0); // Ровно 04:00:00 утра
 		} else {
+			// 🌟 НАШ НОВЫЙ РЕЖИМ «ЧЕРЕЗ ЧАС»:
 			repetitions = 0;
 			interval = 1;
+			nextDate.setHours(nextDate.getHours() + 1); // +1 час к текущему времени
 		}
 
 		easeFactor = easeFactor + (0.1 - (5 - score) * (0.08 + (5 - score) * 0.02));
 		if (easeFactor < 1.3) easeFactor = 1.3;
-
-		const nextDate = new Date();
-		nextDate.setDate(nextDate.getDate() + interval);
-		nextDate.setHours(4, 0, 0, 0); // Ровно 04:00:00 утра
 
 		try {
 			await this.fb.updateWordProgress(currentWord.id, {
