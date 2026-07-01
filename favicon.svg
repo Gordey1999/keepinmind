@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+<!-- Скругленный квадрат фирменного синего цвета Apple/Google -->
+<rect width="512" height="512" rx="140" fill="#007aff"/>
+
+<!-- Аббревиатура KiM по центру (профессиональный геометрический sans-serif) -->
+<text x="50%" y="53%"
+      dominant-baseline="middle"
+      text-anchor="middle"
+      fill="#ffffff"
+      font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+      font-size="250"
+      font-weight="800"
+      letter-spacing="-6">KiM</text>
+</svg>
