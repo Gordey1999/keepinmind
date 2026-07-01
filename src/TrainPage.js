@@ -4,7 +4,6 @@ export class TrainPage {
 		this.speech = speechService;
 
 		this._queue = [];
-		this._currentIndex = 0;
 
 		// Элементы интерфейса
 		this._el = document.getElementById('screen-train');
@@ -47,8 +46,8 @@ export class TrainPage {
 		this._btnShowHint.addEventListener('click', this._showTranslation.bind(this));
 		this._btnAudio.addEventListener('click', this._pronounceCurrent.bind(this));
 
-		this._btnRemember.addEventListener('click', () => this._handleScore(5));
-		this._btnDontRemember.addEventListener('click', () => this._handleScore(0));
+		this._btnRemember.addEventListener('click', () => this._handleRemember());
+		this._btnDontRemember.addEventListener('click', () => this._handleDontRemember());
 	}
 
 	async startTraining() {
@@ -64,9 +63,8 @@ export class TrainPage {
 
 			this._queue = allWords.filter(word => {
 				return new Date(word.nextReviewDate) <= now;
-			});
+			}).slice(0, 15);
 
-			this._currentIndex = 0;
 			this._showCard();
 		} catch (err) {
 			console.error(err);
@@ -74,34 +72,27 @@ export class TrainPage {
 	}
 
 	_showCard() {
-		if (this._currentIndex >= this._queue.length) {
+		if (!this._queue.length) {
 			this._showFinished();
 			return;
 		}
 
-		this._cardsLeftEl.innerText = this._queue.length - this._currentIndex;
-		const currentWord = this._queue[this._currentIndex];
+		this._cardsLeftEl.innerText = this._queue.length;
+		const currentWord = this._queue[0];
 
 		this._cardCategory.innerText = `Категория: ${currentWord.category}`;
-		this._cardWord.innerText = currentWord.term;
-		this._correctAnswerText.innerText = currentWord.hint;
+		this._cardWord.innerText = currentWord.hint;
+		this._correctAnswerText.innerText = currentWord.term;
 
-		// 1. Проверяем, есть ли в слове русские буквы
-		const hasRussianLetters = /[а-яА-ЯёЁ]/.test(currentWord.term);
-
-		if (hasRussianLetters) {
+		if (!this._canPronounce(currentWord)) {
 			this._btnAudio.classList.add('--hidden'); // Скрываем динамик
 		} else {
 			this._btnAudio.classList.remove('--hidden'); // Показываем динамик
-
-			// 2. Автоматическое аудирование сразу при показе карточки
-			// Обернуто в setTimeout, чтобы интерфейс успел обновиться
-			setTimeout(() => this._pronounceCurrent(), 100);
 		}
 
-		const hasPunctuation = /[.,()\-!?/;:]/.test(currentWord.hint);
+		const hasPunctuation = /[.,()\-!?/;:]/.test(currentWord.term);
 		// 3. Условие для показа поля ввода: если длина ответа (подсказки) меньше 30 символов
-		if (currentWord.hint.length < 30 && !hasPunctuation) {
+		if (currentWord.term.length < 30 && !hasPunctuation) {
 			this._inputZone.classList.remove('--hidden');
 		} else {
 			this._inputZone.classList.add('--hidden');
@@ -117,13 +108,13 @@ export class TrainPage {
 		this._resultBadge.className = 'card__result-badge --hidden';
 
 		// Фокусируемся на вводе только если поле доступно
-		if (currentWord.hint.length < 30 && !hasPunctuation) {
+		if (currentWord.term.length < 30 && !hasPunctuation) {
 			this._inputAnswer.focus();
 		}
 	}
 
 	_pronounceCurrent() {
-		const currentWord = this._queue[this._currentIndex];
+		const currentWord = this._queue[0];
 		if (currentWord) {
 			this.speech.speak(currentWord.term);
 		}
@@ -132,8 +123,8 @@ export class TrainPage {
 	// 🔄 НОВАЯ ЛОГИКА ПРОВЕРКИ: бесконечные попытки
 	_checkAnswer() {
 		const userAnswer = this._inputAnswer.value.trim().toLowerCase();
-		const currentWord = this._queue[this._currentIndex];
-		const correctAnswer = currentWord.hint.trim().toLowerCase();
+		const currentWord = this._queue[0];
+		const correctAnswer = currentWord.term.trim().toLowerCase();
 
 		// Сбрасываем старые классы подсветки перед новой проверкой
 		this._inputAnswer.className = '';
@@ -146,6 +137,10 @@ export class TrainPage {
 			this._inputAnswer.disabled = true;
 			this._btnCheck.disabled = true;
 			this._showTranslation();
+
+			if (this._canPronounce(currentWord)) {
+				setTimeout(() => this._pronounceCurrent(), 100);
+			}
 		} else {
 			// Если неверно — просто говорим об этом. Поле ОСТАЕТСЯ активным для новых попыток
 			this._inputAnswer.classList.add('--error');
@@ -154,13 +149,32 @@ export class TrainPage {
 		}
 	}
 
+	_canPronounce(word) {
+		return !/[а-яА-ЯёЁ]/.test(word.term);
+	}
+
 	_showTranslation() {
 		this._cardTranslation.classList.remove('--hidden');
 	}
 
-	async _handleScore(score) {
-		const currentWord = this._queue[this._currentIndex];
-		if (!currentWord) return;
+	async _handleRemember() {
+		const currentWord = this._queue.shift();
+		if (!currentWord) { return; }
+
+		this._saveScore(currentWord, currentWord.failed ? 0 : 5);
+		this._showCard();
+	}
+
+	async _handleDontRemember() {
+		const currentWord = this._queue.shift();
+		if (!currentWord) { return; }
+
+		currentWord.failed = true;
+		this._queue.push(currentWord);
+		this._showCard();
+	}
+
+	async _saveScore(currentWord, score) {
 
 		let { repetitions, interval, easeFactor } = currentWord;
 
@@ -192,10 +206,8 @@ export class TrainPage {
 				easeFactor,
 				nextReviewDate: nextDate.toISOString()
 			});
-
-			this._currentIndex++;
-			this._showCard();
 		} catch (err) {
+			console.error(err);
 			alert('Ошибка при сохранении прогресса в облако');
 		}
 	}

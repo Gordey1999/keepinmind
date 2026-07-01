@@ -65,13 +65,24 @@
 					<span class="card__result-badge" id="check-result-badge">Верно!</span>
 				</div>
 
-				<button class="btn-show-hint" id="btn-show-hint">Показать перевод</button>
+				<button class="btn-show-hint" id="btn-show-hint">Показать ответ</button>
 			</div>
 
 			<!-- Кнопки управления -->
 			<div class="train__actions">
-				<button class="btn-action --dont-remember">Не помню</button>
-				<button class="btn-action --remember">Помню</button>
+				<!-- Первоначальное состояние: кнопка "Не знаю / Показать ответ" -->
+				<!-- Если поле ввода скрыто (длинный текст), эта кнопка будет единственным способом увидеть ответ -->
+				<button class="btn-primary" id="btn-main-reveal" style="grid-column: span 2; padding: 1rem; font-size: 1.1rem;">
+					<i class="fa-solid fa-eye"></i> Показать ответ
+				</button>
+
+				<!-- Панель оценок алгоритма SM-2 (скрыта при старте карточки) -->
+				<div class="train__score-panel --hidden" id="train-score-panel" style="grid-column: span 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%;">
+					<button class="btn-score --score-0" data-score="0">Забыл</button>
+					<button class="btn-score --score-3" data-score="3">Трудно</button>
+					<button class="btn-score --score-4" data-score="4">Помню</button>
+					<button class="btn-score --score-5" data-score="5">Легко</button>
+				</div>
 			</div>
 
 			<!-- Сообщение об окончании (скрыто по умолчанию) -->

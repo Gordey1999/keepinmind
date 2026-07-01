@@ -536,3 +536,20 @@ input[type="text"], select {
 		grid-column: span 1;
 	}
 }
+
+.btn-score {
+	border: none;
+	padding: 0.8rem 5px;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-weight: bold;
+	cursor: pointer;
+	color: white;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+	transition: opacity 0.2s;
+}
+.btn-score:hover { opacity: 0.8; }
+.btn-score.--score-0 { background-color: #ff3b30; } /* Красный */
+.btn-score.--score-3 { background-color: #ff9500; } /* Оранжевый */
+.btn-score.--score-4 { background-color: #007aff; } /* Синий */
+.btn-score.--score-5 { background-color: #34c759; } /* Зеленый */
