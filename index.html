@@ -53,16 +53,9 @@
 					<button class="btn-audio" title="Озвучить"><i class="fa-solid fa-volume-high"></i></button>
 				</div>
 
-				<!-- ЗОНА ВВОДА ДЛЯ САМОПРоОВЕРКИ -->
-				<div class="card__input-zone" id="card-check-zone">
-					<input type="text" id="train-answer-input" placeholder="Введите перевод для проверки..." autocomplete="off">
-					<button class="btn-primary" id="btn-check-answer">Проверить</button>
-				</div>
-
 				<!-- Подсказка / Перевод (скрыта по умолчанию) -->
 				<div class="card__back --hidden" id="card-translation">
 					<p class="card__hint"><strong id="correct-answer-text">Интервальные повторения</strong></p>
-					<span class="card__result-badge" id="check-result-badge">Верно!</span>
 				</div>
 			</div>
 
@@ -162,7 +155,7 @@
 					<input type="text" required class="js-form-term" placeholder="Например: Consistent">
 				</label>
 				<label>Перевод или подсказка:
-					<input type="text" required class="js-form-hint" placeholder="Например: Последовательный">
+					<textarea type="text" required class="js-form-hint" placeholder="Например: Последовательный"></textarea>
 				</label>
 				<label>Категория:
 					<div class="select-wrapper">

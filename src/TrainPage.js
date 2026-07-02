@@ -13,15 +13,9 @@ export class TrainPage {
 		this._cardWord = this._el.querySelector('.card__word');
 		this._btnAudio = this._el.querySelector('.btn-audio');
 
-		// Зона проверки
-		this._inputZone = document.getElementById('card-check-zone');
-		this._inputAnswer = document.getElementById('train-answer-input');
-		this._btnCheck = document.getElementById('btn-check-answer');
-
 		// Зона перевода
 		this._cardTranslation = document.getElementById('card-translation');
 		this._correctAnswerText = document.getElementById('correct-answer-text');
-		this._resultBadge = document.getElementById('check-result-badge');
 
 		// Кнопки результата
 		this._actionsZone = this._el.querySelector('.train__actions');
@@ -42,14 +36,10 @@ export class TrainPage {
 	}
 
 	_bind() {
-		this._btnCheck.addEventListener('click', this._checkAnswer.bind(this));
-		this._inputAnswer.addEventListener('keydown', (e) => {
-			if (e.key === 'Enter') this._checkAnswer();
-		});
 
 		this._btnMainReveal.addEventListener('click', this._revealCard.bind(this));
 
-		this._btnAudio.addEventListener('click', this._pronounceCurrent.bind(this));
+		this._btnAudio.addEventListener('click', this._pronounce.bind(this));
 
 		this._scorePanel.addEventListener('click', (e) => {
 			const btn = e.target.closest('.btn-score');
@@ -118,42 +108,23 @@ export class TrainPage {
 		const currentWord = this._queue[0];
 
 		this._cardCategory.innerText = `Категория: ${currentWord.category}`;
-		this._cardWord.innerText = currentWord.hint;
-		this._correctAnswerText.innerText = currentWord.term;
+		this._cardWord.innerText = currentWord.term;
+		this._correctAnswerText.innerText = currentWord.hint;
 
-		if (!this._canPronounce(currentWord)) {
-			this._btnAudio.classList.add('--hidden'); // Скрываем динамик
+		if (this._canPronounce(currentWord)) {
+			this._btnAudio.classList.remove('--hidden');
+			this._pronounce();
 		} else {
-			this._btnAudio.classList.remove('--hidden'); // Показываем динамик
-		}
-
-		const hasPunctuation = /[.,()\-!?/;:]/.test(currentWord.term);
-		// 3. Условие для показа поля ввода: если длина ответа (подсказки) меньше 30 символов
-		if (currentWord.term.length < 30 && !hasPunctuation) {
-			this._inputZone.classList.remove('--hidden');
-		} else {
-			this._inputZone.classList.add('--hidden');
+			this._btnAudio.classList.add('--hidden');
 		}
 
 		this._btnMainReveal.classList.remove('--hidden');
 		this._scorePanel.classList.add('--hidden');
 
-		// Сбрасываем состояние полей для нового слова
-		this._inputAnswer.value = '';
-		this._inputAnswer.className = '';
-		this._inputAnswer.disabled = false;
-		this._btnCheck.disabled = false;
-
 		this._cardTranslation.classList.add('--hidden');
-		this._resultBadge.className = 'card__result-badge --hidden';
-
-		// Фокусируемся на вводе только если поле доступно
-		if (currentWord.term.length < 30 && !hasPunctuation) {
-			this._inputAnswer.focus();
-		}
 	}
 
-	_pronounceCurrent() {
+	_pronounce() {
 		const currentWord = this._queue[0];
 		if (currentWord) {
 			this.speech.speak(currentWord.term);
@@ -162,10 +133,6 @@ export class TrainPage {
 
 	_revealCard() {
 		this._cardTranslation.classList.remove('--hidden');
-
-		if (this._canPronounce(this._queue[0])) {
-			this._pronounceCurrent();
-		}
 
 		this._btnMainReveal.classList.add('--hidden');
 		this._scorePanel.classList.remove('--hidden');
@@ -184,31 +151,6 @@ export class TrainPage {
 
 		    this._btnStillForget.classList.add('--hidden');
 		    this._btnNowRemember.classList.add('--hidden');
-		}
-	}
-
-	// 🔄 НОВАЯ ЛОГИКА ПРОВЕРКИ: бесконечные попытки
-	_checkAnswer() {
-		const userAnswer = this._inputAnswer.value.trim().toLowerCase();
-		const currentWord = this._queue[0];
-		const correctAnswer = currentWord.term.trim().toLowerCase();
-
-		// Сбрасываем старые классы подсветки перед новой проверкой
-		this._inputAnswer.className = '';
-
-		if (userAnswer === correctAnswer) {
-			// Если верно — подсвечиваем, блокируем поле и показываем перевод
-			this._inputAnswer.classList.add('--success');
-			this._resultBadge.innerText = 'Верно!';
-			this._resultBadge.className = 'card__result-badge --success';
-			this._inputAnswer.disabled = true;
-			this._btnCheck.disabled = true;
-			this._revealCard();
-		} else {
-			// Если неверно — просто говорим об этом. Поле ОСТАЕТСЯ активным для новых попыток
-			this._inputAnswer.classList.add('--error');
-			this._resultBadge.innerText = 'Неверно, попробуйте еще раз';
-			this._resultBadge.className = 'card__result-badge --error';
 		}
 	}
 
